@@ -1,4 +1,4 @@
-module schema_registry
+module github.com/abergasov/schema_registry
 
 go 1.17
 
