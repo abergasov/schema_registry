@@ -3,6 +3,7 @@ package schema_registry
 import (
 	"encoding/json"
 
+	"schema_registry/pkg/grpc/task"
 	"schema_registry/pkg/grpc/user"
 
 	"google.golang.org/protobuf/proto"
@@ -22,7 +23,7 @@ func InitRegistry(supportedUserVersions []int) *Registry {
 	return result
 }
 
-func (r *Registry) EncodeUserStreamEvent(event string, version int, payload interface{}) ([]byte, error) {
+func (r *Registry) encodeEvent(event string, version int, payload interface{}, caster caster) ([]byte, error) {
 	result := &entityStreamEvent{
 		Event:   event,
 		Version: version,
@@ -30,22 +31,19 @@ func (r *Registry) EncodeUserStreamEvent(event string, version int, payload inte
 	if ok, _ := r.supportedUserVersions[version]; !ok {
 		return nil, UnsupportedEventVersion
 	}
-
-	var err error
-	switch version {
-	case 1:
-		u, ok := payload.(*user.UserStreamV1)
-		if ok {
-			result.Data, err = proto.Marshal(u)
-		}
+	msg, ok := caster(version, payload)
+	if !ok {
+		return nil, UnsupportedEvent
 	}
+	var err error
+	result.Data, err = proto.Marshal(msg)
 	if err != nil {
 		return nil, err
 	}
 	return json.Marshal(result)
 }
 
-func (r *Registry) DecodeUserStreamEvent(message []byte) (map[int]interface{}, error) {
+func (r *Registry) decodeEvent(message []byte, caster deCaster) (map[int]interface{}, error) {
 	var result entityStreamEvent
 	err := json.Unmarshal(message, &result)
 	if err != nil {
@@ -54,13 +52,62 @@ func (r *Registry) DecodeUserStreamEvent(message []byte) (map[int]interface{}, e
 	if ok, _ := r.supportedUserVersions[result.Version]; !ok {
 		return nil, UnsupportedEvent
 	}
-	switch result.Version {
-	case 1:
-		var usr user.UserStreamV1
-		if err = proto.Unmarshal(result.Data, &usr); err != nil {
-			return nil, err
-		}
-		return map[int]interface{}{1: &usr}, nil
+	payload, err := caster(result.Version, result.Data)
+	if err != nil {
+		return nil, err
 	}
-	return nil, UnsupportedEvent
+	return map[int]interface{}{result.Version: payload}, nil
+}
+
+func (r *Registry) EncodeUserStreamEvent(event string, version int, payload interface{}) ([]byte, error) {
+	return r.encodeEvent(event, version, payload, func(v int, data interface{}) (proto.Message, bool) {
+		switch v {
+		case 1:
+			usr, ok := payload.(*user.UserStreamV1)
+			return usr, ok
+		}
+		return nil, false
+	})
+}
+
+func (r *Registry) DecodeUserStreamEvent(message []byte) (map[int]interface{}, error) {
+	return r.decodeEvent(message, func(v int, data []byte) (proto.Message, error) {
+		switch v {
+		case 1:
+			var usr user.UserStreamV1
+			err := proto.Unmarshal(data, &usr)
+			return &usr, err
+		}
+		return nil, UnsupportedEvent
+	})
+}
+
+func (r *Registry) EncodeTaskStreamEvent(event string, version int, payload interface{}) ([]byte, error) {
+	return r.encodeEvent(event, version, payload, func(v int, data interface{}) (proto.Message, bool) {
+		switch v {
+		case 1:
+			tsk, ok := payload.(*task.TaskStreamV1)
+			return tsk, ok
+		case 2:
+			tsk, ok := payload.(*task.TaskStreamV2)
+			return tsk, ok
+		}
+		return nil, false
+	})
+}
+
+func (r *Registry) DecodeTaskStreamEvent(message []byte) (map[int]interface{}, error) {
+	return r.decodeEvent(message, func(v int, data []byte) (proto.Message, error) {
+		switch v {
+		case 1:
+			var usr task.TaskStreamV1
+			err := proto.Unmarshal(data, &usr)
+			return &usr, err
+		case 2:
+			var usr task.TaskStreamV2
+			err := proto.Unmarshal(data, &usr)
+			return &usr, err
+		}
+		return nil, UnsupportedEvent
+	})
 }

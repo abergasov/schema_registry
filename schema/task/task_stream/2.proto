@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package protobuf;
+
+option go_package = "./task";
+
+message TaskStreamV2 {
+  string publicID = 1;
+  string title = 2;
+  string jiraID = 3;
+  string description = 4;
+  string author = 5;
+  int64 assignCost = 6;
+  int64 doneCost = 7;
+  string status = 8;
+  string publicStatus = 9;
+  string createdAt = 10;
+  string assignedTo = 11;
+  string assignedAt = 12;
+}
