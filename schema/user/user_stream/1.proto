@@ -4,7 +4,7 @@ package protobuf;
 
 option go_package = "./user";
 
-message UserStreamV1 {
+message UserAccountV1 {
   string publicID = 1;
   string userName = 2;
   string userMail = 3;

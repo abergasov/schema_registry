@@ -4,7 +4,7 @@ package protobuf;
 
 option go_package = "./task";
 
-message TaskStreamV2 {
+message TaskV2 {
   string publicID = 1;
   string title = 2;
   string jiraID = 3;

@@ -3,9 +3,8 @@ package schema_registry
 import (
 	"encoding/json"
 
-	"schema_registry/pkg/grpc/task"
-	"schema_registry/pkg/grpc/user"
-
+	"github.com/abergasov/schema_registry/pkg/grpc/task"
+	"github.com/abergasov/schema_registry/pkg/grpc/user"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -63,7 +62,7 @@ func (r *Registry) EncodeUserStreamEvent(event string, version int, payload inte
 	return r.encodeEvent(event, version, payload, func(v int, data interface{}) (proto.Message, bool) {
 		switch v {
 		case 1:
-			usr, ok := payload.(*user.UserStreamV1)
+			usr, ok := payload.(*user.UserAccountV1)
 			return usr, ok
 		}
 		return nil, false
@@ -74,7 +73,7 @@ func (r *Registry) DecodeUserStreamEvent(message []byte) (map[int]interface{}, e
 	return r.decodeEvent(message, func(v int, data []byte) (proto.Message, error) {
 		switch v {
 		case 1:
-			var usr user.UserStreamV1
+			var usr user.UserAccountV1
 			err := proto.Unmarshal(data, &usr)
 			return &usr, err
 		}
@@ -86,10 +85,10 @@ func (r *Registry) EncodeTaskStreamEvent(event string, version int, payload inte
 	return r.encodeEvent(event, version, payload, func(v int, data interface{}) (proto.Message, bool) {
 		switch v {
 		case 1:
-			tsk, ok := payload.(*task.TaskStreamV1)
+			tsk, ok := payload.(*task.TaskV1)
 			return tsk, ok
 		case 2:
-			tsk, ok := payload.(*task.TaskStreamV2)
+			tsk, ok := payload.(*task.TaskV2)
 			return tsk, ok
 		}
 		return nil, false
@@ -100,11 +99,11 @@ func (r *Registry) DecodeTaskStreamEvent(message []byte) (map[int]interface{}, e
 	return r.decodeEvent(message, func(v int, data []byte) (proto.Message, error) {
 		switch v {
 		case 1:
-			var usr task.TaskStreamV1
+			var usr task.TaskV1
 			err := proto.Unmarshal(data, &usr)
 			return &usr, err
 		case 2:
-			var usr task.TaskStreamV2
+			var usr task.TaskV2
 			err := proto.Unmarshal(data, &usr)
 			return &usr, err
 		}
