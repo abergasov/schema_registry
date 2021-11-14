@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package protobuf;
+
+option go_package = "./task";
+
+message TaskStreamV1 {
+  string publicID = 1;
+  string title = 2;
+  string description = 3;
+  string author = 4;
+  int64 assignCost = 5;
+  int64 doneCost = 6;
+  string status = 7;
+  string createdAt = 8;
+  string assignedTo = 9;
+  string assignedAt = 10;
+}

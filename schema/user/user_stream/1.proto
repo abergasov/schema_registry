@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package protobuf;
+
+option go_package = "./user";
+
+message UserStreamV1 {
+  string publicID = 1;
+  string userName = 2;
+  string userMail = 3;
+  string userRole = 4;
+  int64 version = 5;
+  bool active = 6;
+}
